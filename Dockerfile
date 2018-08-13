@@ -1,9 +1,11 @@
 FROM php:7.2.8-apache-stretch
 
-ENV APACHE_DOCUMENT_ROOT /var/www/html
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+ENV DOCUMENT_ROOT /var/www/html/public
 
 #enable php mysqli functions
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
+RUN docker-php-ext-install pdo_mysql
 
 #install oci
 RUN apt-get update && apt-get -y install wget bsdtar libaio1 && \
@@ -23,7 +25,22 @@ RUN echo php -v
 
 RUN php -m
 
+# install composer
+RUN apt-get update && apt-get install -y git
+
+RUN apt-get update && apt-get install -y zlib1g-dev \
+    && docker-php-ext-install zip
+
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+RUN php -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+RUN php -r "unlink('composer-setup.php');"
+
 RUN echo "<?php phpinfo(); ?>" >> /var/www/html/index.php
+
+# gran finale
+RUN a2enmod rewrite
+RUN service apache2 restart
 
 VOLUME /var/www/html
 
