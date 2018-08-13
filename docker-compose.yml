@@ -1,9 +1,9 @@
 version: '3'
 
 services:
-  php:
-    build: ./
+  web:
+    image: jefersoncap/php7.2-oci-apache
+    ports:
+      - 8080:80
     volumes:
       - ./app:/var/www/html
-    ports:
-      - 8085:9000
