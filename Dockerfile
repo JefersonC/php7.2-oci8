@@ -28,13 +28,28 @@ RUN php -m
 # install composer
 RUN apt-get update && apt-get install -y git
 
-RUN apt-get update && apt-get install -y zlib1g-dev \
-    && docker-php-ext-install zip
+RUN apt-get update && apt-get install -y zlib1g-dev
+RUN apt-get update && apt-get install -y unzip
+RUN apt-get install -y libjpeg62-turbo-dev
+RUN apt-get install -y libpng-dev
+RUN apt-get install -y libfreetype6-dev
+RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/
+RUN docker-php-ext-install gd
+RUN docker-php-ext-install zip
+
+RUN \
+    apt-get update && \
+    apt-get install libldap2-dev -y && \
+    rm -rf /var/lib/apt/lists/* && \
+    docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \
+    docker-php-ext-install ldap
 
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 RUN php -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
 RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 RUN php -r "unlink('composer-setup.php');"
+
+RUN php -m
 
 RUN echo "<?php phpinfo(); ?>" >> /var/www/html/index.php
 
